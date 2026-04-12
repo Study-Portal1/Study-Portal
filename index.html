@@ -755,7 +755,7 @@ localStorage.setItem('sessionId', currentSessionId);
 
 let finalName = getDeviceName();
 try {
-const registrySnap = await db.collection('portalData').doc('deviceRegistry').get();
+const registrySnap = await db.collection('portalData').doc('deviceRegistry_' + auth.currentUser.uid).get();
 if (registrySnap.exists) {
 const registry = registrySnap.data();
 if (registry[persistentDeviceId]) {
@@ -773,7 +773,7 @@ name: finalName,
 time: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
 };
 
-await db.collection('portalData').doc('activeSessions').set({
+await db.collection('portalData').doc('activeSessions_' + auth.currentUser.uid).set({
 sessions: firebase.firestore.FieldValue.arrayUnion(newSession)
 }, { merge: true });
 }
@@ -807,13 +807,13 @@ editingSessionId = null;
 renderLinkedDevices();
 
 try {
-await db.collection('portalData').doc('activeSessions').update({
+await db.collection('portalData').doc('activeSessions_' + auth.currentUser.uid).update({
 sessions: activeSessionsArray
 });
 
 const targetDeviceId = deviceId || getOrCreateDeviceId();
 
-await db.collection('portalData').doc('deviceRegistry').set({
+await db.collection('portalData').doc('deviceRegistry_' + auth.currentUser.uid).set({
 [targetDeviceId]: newName
 }, { merge: true });
 
@@ -825,7 +825,8 @@ showToast('Failed to save device name to cloud.', 'error');
 }
 
 function listenToSessions() {
-db.collection('portalData').doc('activeSessions').onSnapshot((doc) => {
+if (!auth.currentUser) return;
+db.collection('portalData').doc('activeSessions_' + auth.currentUser.uid).onSnapshot((doc) => {
 if (doc.exists) {
 activeSessionsArray = doc.data().sessions || [];
 if (currentSessionId && !isLoggingOut) {
@@ -838,7 +839,7 @@ if(modal && modal.style.display === 'flex') {
 renderLinkedDevices();
 }
 } else {
-db.collection('portalData').doc('activeSessions').set({ sessions: [] });
+db.collection('portalData').doc('activeSessions_' + auth.currentUser.uid).set({ sessions: [] });
 }
 });
 }
@@ -848,7 +849,7 @@ const confirmed = await showCustomConfirm("Are you sure you want to log out all 
 
 if (confirmed) {
 try {
-const docRef = db.collection('portalData').doc('activeSessions');
+const docRef = db.collection('portalData').doc('activeSessions_' + auth.currentUser.uid);
 const docSnap = await docRef.get();
 
 if (docSnap.exists) {
@@ -874,7 +875,7 @@ showToast("Failed to log out other devices.", "error");
 
 async function removeSession(sessionId) {
 try {
-const docRef = db.collection('portalData').doc('activeSessions');
+const docRef = db.collection('portalData').doc('activeSessions_' + auth.currentUser.uid);
 const docSnap = await docRef.get();
 if (docSnap.exists) {
 const sessions = docSnap.data().sessions || [];
@@ -974,10 +975,15 @@ const startLimitStr = getLocalISOString(startLimit);
 let todayTargets = [];
 let streakTargets = [];
 
-const todaySnap = await db.collection("dailyTargets").where("date", "==", todayStr).get();
+const todaySnap = await db.collection("dailyTargets")
+.where("userId", "==", auth.currentUser.uid)
+.where("date", "==", todayStr).get();
 todaySnap.forEach(doc => todayTargets.push(doc.data()));
 
-const streakSnap = await db.collection("dailyTargets").where("date", ">=", startLimitStr).where("date", "<=", todayStr).get();
+const streakSnap = await db.collection("dailyTargets")
+.where("userId", "==", auth.currentUser.uid)
+.where("date", ">=", startLimitStr)
+.where("date", "<=", todayStr).get();
 streakSnap.forEach(doc => streakTargets.push(doc.data()));
 
 let totalTasks = 0; let completedTasks = 0; let isHoliday = false;
@@ -1378,6 +1384,7 @@ const user = auth.currentUser;
 if (user) {
 try {
 const snapshot = await db.collection("dailyTargets")
+.where("userId", "==", user.uid)
 .where("date", ">=", startStr)
 .where("date", "<=", endStr)
 .get();
@@ -1385,6 +1392,7 @@ const snapshot = await db.collection("dailyTargets")
 snapshot.forEach(doc => calendarTargets.push(doc.data()));
 
 const lifeSnap = await db.collection("personalReminders")
+.where("userId", "==", user.uid)
 .where("date", ">=", startStr)
 .where("date", "<=", endStr)
 .get();

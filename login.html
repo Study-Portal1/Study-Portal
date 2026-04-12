@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SwiftX - Authentication</title>
+<title>Study Portal - Authentication</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
@@ -190,11 +190,6 @@ p.subtitle {
         </div>
 
         <div class="form-group">
-            <label>Phone Number</label>
-            <input type="tel" id="reg-phone" placeholder="+91 98765 43210" required>
-        </div>
-
-        <div class="form-group">
             <label>Password</label>
             <div class="input-wrapper">
                 <input type="password" id="reg-password" placeholder="••••••••" required>
@@ -209,7 +204,15 @@ p.subtitle {
 
         <div class="form-group">
             <label>Confirm Password</label>
-            <input type="password" id="reg-confirm" placeholder="••••••••" required>
+            <div class="input-wrapper">
+                <input type="password" id="reg-confirm" placeholder="••••••••" required>
+                <div class="toggle-password" onclick="toggleVisibility('reg-confirm', 'reg-confirm-eye-icon')">
+                    <svg id="reg-confirm-eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                </div>
+            </div>
         </div>
 
         <button class="btn" id="reg-btn" onclick="handleRegister()">Sign Up</button>
@@ -239,7 +242,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 // ==========================================
-// AUTH STATE LISTENER (THE FIX IS HERE)
+// AUTH STATE LISTENER 
 // ==========================================
 // Redirect to index.html if successfully logged in
 auth.onAuthStateChanged((user) => {
@@ -330,40 +333,28 @@ function handleLogin() {
 async function handleRegister() {
     const name = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
     const password = document.getElementById('reg-password').value;
     const confirmPassword = document.getElementById('reg-confirm').value;
     const btn = document.getElementById('reg-btn');
 
-    if (!name || !email || !phone || !password || !confirmPassword) return showToast("Please fill in all fields.", "error");
+    // 1. Validation
+    if (!name || !email || !password || !confirmPassword) return showToast("Please fill in all fields.", "error");
     if (password !== confirmPassword) return showToast("Passwords do not match.", "error");
 
     btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> Verifying...`;
+    btn.innerHTML = `<span class="spinner"></span> Creating Account...`;
 
     try {
-        // Step A: Check if phone number exists in Firestore
-        const usersRef = db.collection('users');
-        const phoneSnapshot = await usersRef.where('phone', '==', phone).get();
-
-        if (!phoneSnapshot.empty) {
-            btn.disabled = false;
-            btn.innerHTML = "Sign Up";
-            return showToast("This phone number is already registered.", "error");
-        }
-
-        // Step B: Create Auth Account (Handles duplicate email automatically)
-        btn.innerHTML = `<span class="spinner"></span> Creating Account...`;
+        // 2. Create Auth Account 
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         const user = userCredential.user;
 
-        // Step C: Update Auth Profile & Save to Firestore Database
+        // 3. Update Auth Profile & Save to Firestore Database
         await user.updateProfile({ displayName: name });
         
         await db.collection('users').doc(user.uid).set({
             name: name,
             email: email,
-            phone: phone,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 

@@ -397,7 +397,7 @@ fetchTargets();
 setTimeout(checkWeeklyRecap, 2000);
 } else {
 // Kick out to login if not authenticated
-window.location.href = 'index.html';
+window.location.href = 'login.html';
 }
 });
 };
@@ -1018,6 +1018,7 @@ document.getElementById('analytics-subtitle').innerText = `Data from ${sDate} to
 
 try {
 const snapshot = await db.collection("dailyTargets")
+.where("userId", "==", currentUser.uid)
 .where("date", ">=", startDateStr)
 .where("date", "<=", endDateStr)
 .get();
@@ -1176,6 +1177,7 @@ const startStr = getLocalISOString(startLimit);
 
 try {
 const snapshot = await db.collection("dailyTargets")
+.where("userId", "==", currentUser.uid)
 .where("date", ">=", startStr)
 .where("date", "<", todayStr)
 .get();

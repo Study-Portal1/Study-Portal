@@ -826,7 +826,6 @@ btn.disabled = true;
 
 try {
 const snapshot = await db.collection("dailyTargets")
-.where("userId", "==", currentUser.uid)
 .where("date", "==", date).get();
 
 const batch = db.batch();
@@ -1019,7 +1018,6 @@ document.getElementById('analytics-subtitle').innerText = `Data from ${sDate} to
 
 try {
 const snapshot = await db.collection("dailyTargets")
-.where("userId", "==", currentUser.uid)
 .where("date", ">=", startDateStr)
 .where("date", "<=", endDateStr)
 .get();
@@ -1178,7 +1176,6 @@ const startStr = getLocalISOString(startLimit);
 
 try {
 const snapshot = await db.collection("dailyTargets")
-.where("userId", "==", currentUser.uid)
 .where("date", ">=", startStr)
 .where("date", "<", todayStr)
 .get();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Study Portal - Login</title>
+<title>SwiftX - Authentication</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
@@ -26,13 +26,15 @@ body {
     background: var(--bg);
     color: var(--text);
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-.login-container {
+.auth-container {
     background: var(--card-bg);
     padding: 40px;
     border-radius: 12px;
@@ -40,33 +42,51 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     width: 100%;
     max-width: 400px;
-    text-align: center;
     box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
 }
 
-.login-container h2 {
+/* Form transition styling */
+.form-section {
+    transition: all 0.3s ease;
+}
+
+.hidden {
+    display: none;
+}
+
+h2 {
     margin-top: 0;
     margin-bottom: 10px;
     font-size: 1.8rem;
     color: var(--primary);
+    text-align: center;
 }
 
-.login-container p {
+p.subtitle {
     color: #94a3b8;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     font-size: 0.95rem;
+    text-align: center;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     text-align: left;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-weight: 600;
     font-size: 0.9rem;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .form-group input {
@@ -82,9 +102,30 @@ body {
     transition: 0.3s;
 }
 
+/* Extra padding on the right so text doesn't hide behind the eye icon */
+.input-wrapper input[type="password"],
+.input-wrapper input[type="text"] {
+    padding-right: 40px;
+}
+
 .form-group input:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    cursor: pointer;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--primary);
 }
 
 .btn {
@@ -111,20 +152,15 @@ body {
     cursor: not-allowed;
 }
 
-.toggle-mode {
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: #94a3b8;
-}
-
-.toggle-mode span {
+.btn-secondary {
+    background: transparent;
     color: var(--primary);
-    cursor: pointer;
-    font-weight: bold;
+    border: 1px solid var(--primary);
+    margin-top: 12px;
 }
 
-.toggle-mode span:hover {
-    text-decoration: underline;
+.btn-secondary:hover {
+    background: rgba(96, 165, 250, 0.1);
 }
 
 /* Spinner */
@@ -145,25 +181,75 @@ body {
 
 <div id="toast-container"></div>
 
-<div class="login-container">
-    <h2 id="form-title">Welcome Back</h2>
-    <p id="form-subtitle">Log in to access your dashboard.</p>
+<div class="auth-container">
+    
+    <div id="login-section" class="form-section">
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Log in to access your dashboard.</p>
 
-    <div class="form-group">
-        <label>Email Address</label>
-        <input type="email" id="email" placeholder="name@example.com" required>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="login-email" placeholder="name@example.com" required>
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrapper">
+                <input type="password" id="login-password" placeholder="••••••••" required>
+                <div class="toggle-password" onclick="toggleVisibility('login-password', 'login-eye-icon')">
+                    <svg id="login-eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" id="login-btn" onclick="handleLogin()">Sign In</button>
+        <button class="btn btn-secondary" onclick="switchView('register')">Create an Account</button>
     </div>
 
-    <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="password" placeholder="••••••••" required>
+    <div id="register-section" class="form-section hidden">
+        <h2>Create Account</h2>
+        <p class="subtitle">Join us to start chatting.</p>
+
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="reg-name" placeholder="John Doe" required>
+        </div>
+
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="reg-email" placeholder="name@example.com" required>
+        </div>
+
+        <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="reg-phone" placeholder="+1 234 567 8900" required>
+        </div>
+
+        <div class="form-group">
+            <label>Password</label>
+            <div class="input-wrapper">
+                <input type="password" id="reg-password" placeholder="••••••••" required>
+                <div class="toggle-password" onclick="toggleVisibility('reg-password', 'reg-eye-icon')">
+                    <svg id="reg-eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="reg-confirm" placeholder="••••••••" required>
+        </div>
+
+        <button class="btn" id="reg-btn" onclick="handleRegister()">Sign Up</button>
+        <button class="btn btn-secondary" onclick="switchView('login')">Back to Login</button>
     </div>
 
-    <button class="btn" id="submit-btn" onclick="handleAuth()">Sign In</button>
-
-    <div class="toggle-mode">
-        <span id="toggle-text">Don't have an account? <b>Sign Up</b></span>
-    </div>
 </div>
 
 <script>
@@ -184,10 +270,7 @@ if (!firebase.apps.length) {
 }
 const auth = firebase.auth();
 
-// ==========================================
-// AUTH STATE LISTENER (THE BOUNCER)
-// ==========================================
-// If Firebase detects the user is already logged in, instantly send them to index.html
+// Bouncer logic: Redirect if already logged in
 auth.onAuthStateChanged((user) => {
     if (user) {
         window.location.href = 'index.html'; 
@@ -195,18 +278,37 @@ auth.onAuthStateChanged((user) => {
 });
 
 // ==========================================
-// UI LOGIC
+// UI & VIEW LOGIC
 // ==========================================
-let isLoginMode = true;
+function switchView(view) {
+    const loginSec = document.getElementById('login-section');
+    const regSec = document.getElementById('register-section');
 
-document.getElementById('toggle-text').addEventListener('click', () => {
-    isLoginMode = !isLoginMode;
+    if (view === 'register') {
+        loginSec.classList.add('hidden');
+        regSec.classList.remove('hidden');
+    } else {
+        regSec.classList.add('hidden');
+        loginSec.classList.remove('hidden');
+    }
+}
+
+function toggleVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
     
-    document.getElementById('form-title').innerText = isLoginMode ? "Welcome Back" : "Create Account";
-    document.getElementById('form-subtitle').innerText = isLoginMode ? "Log in to access your dashboard." : "Start tracking your progress today.";
-    document.getElementById('submit-btn').innerText = isLoginMode ? "Sign In" : "Sign Up";
-    document.getElementById('toggle-text').innerHTML = isLoginMode ? "Don't have an account? <b>Sign Up</b>" : "Already have an account? <b>Sign In</b>";
-});
+    // SVG paths for open and closed eyes
+    const eyeClosedPath = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+    const eyeOpenPath = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.innerHTML = eyeOpenPath;
+    } else {
+        input.type = "password";
+        icon.innerHTML = eyeClosedPath;
+    }
+}
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -227,67 +329,89 @@ function showToast(message, type = 'success') {
 }
 
 // ==========================================
-// AUTHENTICATION EXECUTION
+// AUTHENTICATION LOGIC
 // ==========================================
-function handleAuth() {
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const btn = document.getElementById('submit-btn');
+function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+    const btn = document.getElementById('login-btn');
 
     if (!email || !password) {
-        showToast("Please enter both email and password.", "error");
-        return;
+        return showToast("Please enter both email and password.", "error");
     }
 
-    // Set loading state
     btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> ${isLoginMode ? "Signing In..." : "Creating Account..."}`;
+    btn.innerHTML = `<span class="spinner"></span> Signing In...`;
 
-    if (isLoginMode) {
-        // --- LOGIN LOGIC ---
-        auth.signInWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                showToast("Logged in successfully! Redirecting...", "success");
-                // Note: The onAuthStateChanged listener at the top will automatically redirect them
-            })
-            .catch((error) => {
-                btn.disabled = false;
-                btn.innerHTML = "Sign In";
-                
-                if(error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                    showToast("Invalid email or password.", "error");
-                } else {
-                    showToast(error.message, "error");
-                }
-            });
-
-    } else {
-        // --- SIGN UP LOGIC ---
-        auth.createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-                showToast("Account created successfully! Redirecting...", "success");
-                // The onAuthStateChanged listener handles redirect
-            })
-            .catch((error) => {
-                btn.disabled = false;
-                btn.innerHTML = "Sign Up";
-                
-                if(error.code === 'auth/email-already-in-use') {
-                    showToast("An account already exists with this email.", "error");
-                } else if(error.code === 'auth/weak-password') {
-                    showToast("Password should be at least 6 characters.", "error");
-                } else {
-                    showToast(error.message, "error");
-                }
-            });
-    }
+    auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+            showToast("Logged in successfully!", "success");
+        })
+        .catch((error) => {
+            btn.disabled = false;
+            btn.innerHTML = "Sign In";
+            if(error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                showToast("Invalid email or password.", "error");
+            } else {
+                showToast(error.message, "error");
+            }
+        });
 }
 
-// Press Enter to trigger login/signup
-document.getElementById('password').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
-        handleAuth();
+function handleRegister() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const confirmPassword = document.getElementById('reg-confirm').value;
+    const btn = document.getElementById('reg-btn');
+
+    // 1. Basic Validation
+    if (!name || !email || !phone || !password || !confirmPassword) {
+        return showToast("Please fill in all fields.", "error");
     }
+
+    // 2. Password Match Check
+    if (password !== confirmPassword) {
+        return showToast("Passwords do not match.", "error");
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Creating Account...`;
+
+    // 3. Create User in Firebase Auth
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            
+            // 4. Update the user's profile with their Name
+            return user.updateProfile({
+                displayName: name
+            }).then(() => {
+                showToast("Account created successfully!", "success");
+                // Note: To save the phone number, you generally need to push it to 
+                // Firebase Firestore or Realtime Database associated with the user.uid
+            });
+        })
+        .catch((error) => {
+            btn.disabled = false;
+            btn.innerHTML = "Sign Up";
+            if(error.code === 'auth/email-already-in-use') {
+                showToast("An account already exists with this email.", "error");
+            } else if(error.code === 'auth/weak-password') {
+                showToast("Password should be at least 6 characters.", "error");
+            } else {
+                showToast(error.message, "error");
+            }
+        });
+}
+
+// Press Enter support for both forms
+document.getElementById('login-password').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+});
+document.getElementById('reg-confirm').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleRegister();
 });
 </script>
 

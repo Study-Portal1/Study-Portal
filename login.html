@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SwiftX - Authentication</title>
+<title>Study Portal - Authentication</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
 <style>
 /* PERMANENT DARK MODE VARIABLES */
@@ -47,14 +48,7 @@ body {
     overflow: hidden;
 }
 
-/* Form transition styling */
-.form-section {
-    transition: all 0.3s ease;
-}
-
-.hidden {
-    display: none;
-}
+.hidden { display: none; }
 
 h2 {
     margin-top: 0;
@@ -71,23 +65,9 @@ p.subtitle {
     text-align: center;
 }
 
-.form-group {
-    margin-bottom: 16px;
-    text-align: left;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-}
-
-.input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
+.form-group { margin-bottom: 16px; text-align: left; }
+.form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
+.input-wrapper { position: relative; display: flex; align-items: center; }
 
 .form-group input {
     width: 100%;
@@ -102,7 +82,6 @@ p.subtitle {
     transition: 0.3s;
 }
 
-/* Extra padding on the right so text doesn't hide behind the eye icon */
 .input-wrapper input[type="password"],
 .input-wrapper input[type="text"] {
     padding-right: 40px;
@@ -123,10 +102,7 @@ p.subtitle {
     justify-content: center;
     transition: color 0.2s;
 }
-
-.toggle-password:hover {
-    color: var(--primary);
-}
+.toggle-password:hover { color: var(--primary); }
 
 .btn {
     width: 100%;
@@ -142,15 +118,8 @@ p.subtitle {
     margin-top: 10px;
 }
 
-.btn:hover {
-    background: var(--btn-hover);
-}
-
-.btn:disabled {
-    background: var(--border);
-    color: #94a3b8;
-    cursor: not-allowed;
-}
+.btn:hover { background: var(--btn-hover); }
+.btn:disabled { background: var(--border); color: #94a3b8; cursor: not-allowed; }
 
 .btn-secondary {
     background: transparent;
@@ -158,10 +127,7 @@ p.subtitle {
     border: 1px solid var(--primary);
     margin-top: 12px;
 }
-
-.btn-secondary:hover {
-    background: rgba(96, 165, 250, 0.1);
-}
+.btn-secondary:hover { background: rgba(96, 165, 250, 0.1); }
 
 /* Spinner */
 .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; vertical-align: middle; margin-right: 8px;}
@@ -183,8 +149,8 @@ p.subtitle {
 
 <div class="auth-container">
     
-    <div id="login-section" class="form-section">
-        <h2>Welcome Back</h2>
+    <div id="login-section">
+        <h2>Welcome to Study Portal</h2>
         <p class="subtitle">Log in to access your dashboard.</p>
 
         <div class="form-group">
@@ -209,9 +175,9 @@ p.subtitle {
         <button class="btn btn-secondary" onclick="switchView('register')">Create an Account</button>
     </div>
 
-    <div id="register-section" class="form-section hidden">
+    <div id="register-section" class="hidden">
         <h2>Create Account</h2>
-        <p class="subtitle">Join us to start chatting.</p>
+        <p class="subtitle">Join Study Portal.</p>
 
         <div class="form-group">
             <label>Full Name</label>
@@ -225,7 +191,7 @@ p.subtitle {
 
         <div class="form-group">
             <label>Phone Number</label>
-            <input type="tel" id="reg-phone" placeholder="+1 234 567 8900" required>
+            <input type="tel" id="reg-phone" placeholder="+91 98765 43210" required>
         </div>
 
         <div class="form-group">
@@ -254,7 +220,7 @@ p.subtitle {
 
 <script>
 // ==========================================
-// FIREBASE CONFIGURATION
+// 1. FIREBASE CONFIGURATION
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyA9VY9TI_HVm6i0OQoKIF7uliJMwauox_g",
@@ -265,20 +231,22 @@ const firebaseConfig = {
     appId: "1:169071188445:web:751974668e41aaadfdbe34"
 };
 
+// Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
+const db = firebase.firestore();
 
-// Bouncer logic: Redirect if already logged in
+// Redirect if already logged in
 auth.onAuthStateChanged((user) => {
     if (user) {
-        window.location.href = 'index.html'; 
+        // window.location.href = 'main.html'; // UNCOMMENT THIS TO ENABLE REDIRECT
     }
 });
 
 // ==========================================
-// UI & VIEW LOGIC
+// 2. UI & VIEW LOGIC
 // ==========================================
 function switchView(view) {
     const loginSec = document.getElementById('login-section');
@@ -297,7 +265,6 @@ function toggleVisibility(inputId, iconId) {
     const input = document.getElementById(inputId);
     const icon = document.getElementById(iconId);
     
-    // SVG paths for open and closed eyes
     const eyeClosedPath = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
     const eyeOpenPath = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
 
@@ -329,24 +296,20 @@ function showToast(message, type = 'success') {
 }
 
 // ==========================================
-// AUTHENTICATION LOGIC
+// 3. AUTHENTICATION LOGIC
 // ==========================================
 function handleLogin() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value.trim();
     const btn = document.getElementById('login-btn');
 
-    if (!email || !password) {
-        return showToast("Please enter both email and password.", "error");
-    }
+    if (!email || !password) return showToast("Please enter both email and password.", "error");
 
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner"></span> Signing In...`;
 
     auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-            showToast("Logged in successfully!", "success");
-        })
+        .then(() => showToast("Logged in successfully!", "success"))
         .catch((error) => {
             btn.disabled = false;
             btn.innerHTML = "Sign In";
@@ -358,7 +321,7 @@ function handleLogin() {
         });
 }
 
-function handleRegister() {
+async function handleRegister() {
     const name = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const phone = document.getElementById('reg-phone').value.trim();
@@ -366,53 +329,56 @@ function handleRegister() {
     const confirmPassword = document.getElementById('reg-confirm').value;
     const btn = document.getElementById('reg-btn');
 
-    // 1. Basic Validation
-    if (!name || !email || !phone || !password || !confirmPassword) {
-        return showToast("Please fill in all fields.", "error");
-    }
-
-    // 2. Password Match Check
-    if (password !== confirmPassword) {
-        return showToast("Passwords do not match.", "error");
-    }
+    if (!name || !email || !phone || !password || !confirmPassword) return showToast("Please fill in all fields.", "error");
+    if (password !== confirmPassword) return showToast("Passwords do not match.", "error");
 
     btn.disabled = true;
-    btn.innerHTML = `<span class="spinner"></span> Creating Account...`;
+    btn.innerHTML = `<span class="spinner"></span> Verifying...`;
 
-    // 3. Create User in Firebase Auth
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
-            
-            // 4. Update the user's profile with their Name
-            return user.updateProfile({
-                displayName: name
-            }).then(() => {
-                showToast("Account created successfully!", "success");
-                // Note: To save the phone number, you generally need to push it to 
-                // Firebase Firestore or Realtime Database associated with the user.uid
-            });
-        })
-        .catch((error) => {
+    try {
+        // Step A: Check if phone number exists in Firestore
+        const usersRef = db.collection('users');
+        const phoneSnapshot = await usersRef.where('phone', '==', phone).get();
+
+        if (!phoneSnapshot.empty) {
             btn.disabled = false;
             btn.innerHTML = "Sign Up";
-            if(error.code === 'auth/email-already-in-use') {
-                showToast("An account already exists with this email.", "error");
-            } else if(error.code === 'auth/weak-password') {
-                showToast("Password should be at least 6 characters.", "error");
-            } else {
-                showToast(error.message, "error");
-            }
+            return showToast("This phone number is already registered.", "error");
+        }
+
+        // Step B: Create Auth Account (Handles duplicate email automatically)
+        btn.innerHTML = `<span class="spinner"></span> Creating Account...`;
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+
+        // Step C: Update Auth Profile & Save to Firestore Database
+        await user.updateProfile({ displayName: name });
+        
+        await db.collection('users').doc(user.uid).set({
+            name: name,
+            email: email,
+            phone: phone,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+
+        showToast("Account created successfully!", "success");
+
+    } catch (error) {
+        btn.disabled = false;
+        btn.innerHTML = "Sign Up";
+        if (error.code === 'auth/email-already-in-use') {
+            showToast("An account already exists with this email.", "error");
+        } else if (error.code === 'auth/weak-password') {
+            showToast("Password should be at least 6 characters.", "error");
+        } else {
+            showToast(error.message, "error");
+        }
+    }
 }
 
-// Press Enter support for both forms
-document.getElementById('login-password').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleLogin();
-});
-document.getElementById('reg-confirm').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleRegister();
-});
+// Press Enter support
+document.getElementById('login-password').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('reg-confirm').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleRegister(); });
 </script>
 
 </body>

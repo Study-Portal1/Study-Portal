@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -237,16 +238,28 @@ Loading Study Portal
 <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
 </button>
 <div class="profile-menu" id="profile-menu">
-<button id="logout-btn" title="Lock Portal" onclick="handleLogout('manual')">
-<svg class="icon-unlocked" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
-<svg class="icon-locked" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-Log Out
-</button>
-<button id="linked-devices-btn" title="View Linked Devices" onclick="document.getElementById('linked-devices-modal').style.display='flex'; renderLinkedDevices(); document.getElementById('profile-menu').classList.remove('show');">
-<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-Linked Devices
-</button>
-</div>
+    <div style="padding: 10px 15px; border-bottom: 1px solid var(--border); margin-bottom: 8px;">
+        <div style="font-size: 0.8rem; color: #64748b;">Signed in as</div>
+        <div id="profile-email-display" style="font-weight: bold; font-size: 0.95rem; color: var(--primary); word-break: break-all;">
+            Loading...
+        </div>
+    </div>
+
+    <button id="reset-password-btn" title="Reset Password" onclick="sendPasswordReset()" style="width: 100%; justify-content: flex-start; padding: 10px 15px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--text); font-size: 0.95rem; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s;" onmouseover="this.style.background='var(--bg)'; this.style.color='var(--primary)';" onmouseout="this.style.background='transparent'; this.style.color='var(--text)';">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Reset Password
+    </button>
+
+    <button id="linked-devices-btn" title="View Linked Devices" onclick="document.getElementById('linked-devices-modal').style.display='flex'; renderLinkedDevices(); document.getElementById('profile-menu').classList.remove('show');">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        Linked Devices
+    </button>
+
+    <button id="logout-btn" title="Lock Portal" onclick="handleLogout('manual')">
+        <svg class="icon-unlocked" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+        <svg class="icon-locked" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Log Out
+    </button>
 </div>
 
 <div id="main-content">
@@ -577,7 +590,23 @@ Clear History
 </div>
 </div>
 </div>
+// ==========================================
+// PASSWORD RESET LOGIC
+// ==========================================
+function sendPasswordReset() {
+    const user = auth.currentUser;
+    if (!user) return;
 
+    auth.sendPasswordResetEmail(user.email)
+        .then(() => {
+            showToast("Password reset link sent to your email!", "success");
+            document.getElementById('profile-menu').classList.remove('show');
+        })
+        .catch((error) => {
+            console.error("Error sending reset email:", error);
+            showToast("Failed to send reset email.", "error");
+        });
+}
 <script>
 function hideLoading() {
 const overlay = document.getElementById('loading-overlay');
@@ -1151,7 +1180,8 @@ setTimeout(() => { window.location.href = 'login.html'; }, 800);
 
 async function launchPortal() {
 document.getElementById('main-content').style.display = 'block';
-
+// NEW: Set the email in the profile dropdown
+    document.getElementById('profile-email-display').innerText = auth.currentUser.email;
 const profileContainer = document.getElementById('profile-container');
 if (profileContainer) {
 profileContainer.style.display = 'block';
